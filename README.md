@@ -1,3 +1,19 @@
+# AIORI-3-HACKATHON-PROJECTS
+
+This repository will contain the code and resources for the AIORI-3 hackathon that will be developed during the AIORI-3.
+
+## Team Introduction Video
+
+[Watch Team Introduction Video on YouTube](https://youtu.be/j5Tt6qvSpoc)
+
+## TraceKit – Live Demo
+
+**Live Application:** https://tracekitdemo-1.onrender.com
+
+**GitHub Source Code:** https://github.com/palak7311/tracekitdemo
+
+---
+
 # TraceKit — Hash Hunters (starter prototype)
 
 A local educational prototype for the AIORI PS-013 idea: evidence upload, SHA-256 fingerprinting, simple log timeline, rule-based red flags, file-copy verification, and PDF export.
