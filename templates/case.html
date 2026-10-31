@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TraceKit Timeline</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body>
+<header class="top"><div><div class="eyebrow">CASE #{{ record.id }}</div><h1>Incident timeline</h1><p>{{ record.original_name }}</p></div><a class="pill" href="{{ url_for('index') }}">← Evidence vault</a></header><main>
+<section class="panel"><h2>Evidence seal</h2><p><b>SHA-256</b></p><code class="hash">{{ record.sha256 }}</code><p class="muted">Uploaded by {{ record.uploaded_by }} · {{ record.uploaded_at }}</p></section>
+<section class="panel"><h2>Red flags</h2>{% if flags %}<ul class="flags">{% for flag in flags %}<li>{{ flag }}</li>{% endfor %}</ul>{% else %}<p>No configured rule matched, or no events were parsed. This is not proof that the activity is safe.</p>{% endif %}</section>
+<section class="panel"><h2>Attack story (rule-based draft)</h2><p>{{ story }}</p><p class="muted">Treat this as an investigation aid, not a final conclusion.</p></section>
+<section class="panel">
+    <h2>Incident Investigation Timeline</h2>
+    <p class="muted">Events arranged in chronological order for investigation.</p>
+
+    {% if events %}
+    <div class="timeline">
+
+        {% for e in events %}
+        <article class="event">
+
+            <div class="event-header">
+                <time>{{ e.display_time }}</time>
+                <span class="tag">{{ e.category }}</span>
+                <span class="priority {{ e.priority|lower }}">
+    {{ e.priority }} Priority
+</span>
+            </div>
+
+            <p class="event-message">{{ e.message }}</p>
+
+            <div class="event-footer">
+                <small>Evidence source: Line {{ e.line }}</small>
+                <small>Event {{ loop.index }} of {{ events|length }}</small>
+            </div>
+
+        </article>
+        {% endfor %}
+
+    </div>
+    {% else %}
+    <p>No timeline events were found in this evidence file.</p>
+    {% endif %}
+</section>
+</main></body></html>

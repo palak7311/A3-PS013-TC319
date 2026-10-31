@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TraceKit Verify</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body>
+<header class="top"><div><div class="eyebrow">CASE #{{ record.id }}</div><h1>Tamper check</h1><p>Compare a file copy with the recorded fingerprint.</p></div><a class="pill" href="{{ url_for('index') }}">← Evidence vault</a></header><main>
+<section class="panel"><h2>Recorded evidence</h2><p><b>{{ record.original_name }}</b></p><code class="hash">{{ record.sha256 }}</code>
+<form method="post" enctype="multipart/form-data" class="verify-form"><label>Select the file copy to verify<input type="file" name="candidate_file" required></label><button type="submit">Compare fingerprints</button></form>
+{% if verdict %}<div class="verdict {% if verdict.startswith('MATCH') %}success{% else %}error{% endif %}">{{ verdict }}</div>{% endif %}
+<p class="footnote">A mismatch means the bytes differ; it does not by itself explain who changed the file or when. Keep original evidence read-only and protect the hash/custody database separately in a real deployment.</p>
+</section></main></body></html>

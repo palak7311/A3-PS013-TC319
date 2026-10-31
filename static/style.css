@@ -1,0 +1,63 @@
+:root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#e9eefb;background:#0a1020;font-synthesis:none}*{box-sizing:border-box}body{margin:0}.top{padding:38px max(22px,calc((100% - 1100px)/2));display:flex;justify-content:space-between;gap:20px;align-items:center;background:linear-gradient(120deg,#111d38,#172c4b);border-bottom:1px solid #293955}.eyebrow{font-size:12px;letter-spacing:2px;color:#8eb8ff;font-weight:800}.top h1{font-size:42px;margin:8px 0}.top p{color:#b6c5dc;margin:0}.pill{border:1px solid #48658c;border-radius:99px;padding:9px 13px;color:#dce9ff;text-decoration:none;white-space:nowrap}main{max-width:1100px;margin:28px auto;padding:0 20px}.panel{background:#111b2e;border:1px solid #263752;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 12px 30px #0002}.panel h2{font-size:20px;margin:0 0 12px}.muted,.footnote{color:#9eafc9;font-size:13px;line-height:1.6}form{display:grid;gap:15px;margin-top:20px}label{display:grid;gap:8px;color:#cbd8ec;font-size:14px}input{width:100%;padding:12px;border-radius:9px;border:1px solid #3b4e6d;background:#0b1425;color:#e9eefb}button,.button-link{background:#69a7ff;color:#061124;font-weight:800;border:0;border-radius:9px;padding:12px 17px;cursor:pointer;text-decoration:none;display:inline-block;width:fit-content}button:hover,.button-link:hover{filter:brightness(1.1)}.secondary{background:#263955;color:#eaf2ff}.notice{padding:13px 16px;border-radius:10px;margin-bottom:14px}.notice.success,.verdict.success{background:#12382f;border:1px solid #2d8068;color:#b7f6dc}.notice.error,.verdict.error{background:#421e2a;border:1px solid #9d4055;color:#ffd4dd}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:13px 10px;border-bottom:1px solid #283852;vertical-align:top}th{color:#9eb6d9}td code,code{overflow-wrap:anywhere;color:#9ec6ff;font-size:12px}.actions{display:flex;flex-wrap:wrap;gap:9px}.actions a{color:#91bdff}.empty{color:#91a5c3;padding:12px 0}.footnote{margin-top:20px}.hash{display:block;padding:14px;background:#0a1323;border:1px solid #293a56;border-radius:8px;line-height:1.7}.flags{line-height:1.8;color:#ffd9a8}.timeline{border-left:2px solid #456a9e;margin:20px 0 5px 8px;padding-left:22px}.event{position:relative;padding:0 0 20px}.event:before{content:"";position:absolute;left:-29px;top:5px;width:10px;height:10px;background:#77b0ff;border-radius:50%;box-shadow:0 0 0 4px #203a5e}.event time{font-weight:800;color:#dce9ff}.event p{margin:8px 0}.event small{color:#8298b9}.tag{font-size:11px;border:1px solid #3a5276;border-radius:99px;padding:4px 7px;margin-left:10px;color:#a9c9ff}.verify-form{margin:22px 0}.verdict{padding:16px;border-radius:10px;margin:18px 0;font-weight:800}@media(max-width:700px){.top{align-items:flex-start;flex-direction:column}.top h1{font-size:34px}main{padding:0 12px}.panel{padding:17px}th,td{min-width:120px}}
+/* Professional Incident Timeline */
+
+.event {
+    padding: 18px;
+    margin: 16px 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-left: 4px solid #64748b;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.event-header time {
+    font-weight: 600;
+}
+
+.event-message {
+    margin: 14px 0;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.event-footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: #94a3b8;
+}
+
+.event-footer small {
+    font-size: 12px;
+}
+.priority {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.priority.high {
+    background: #7f1d1d;
+    color: #fecaca;
+}
+
+.priority.medium {
+    background: #78350f;
+    color: #fde68a;
+}
+
+.priority.low {
+    background: #14532d;
+    color: #bbf7d0;
+}

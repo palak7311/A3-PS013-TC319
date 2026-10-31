@@ -1,0 +1,168 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>TraceKit | Hash Hunters</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    .hdfs-btn {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 13px 22px;
+      background: #2563eb;
+      color: white;
+      text-decoration: none;
+      border-radius: 9px;
+      font-weight: 600;
+      transition: 0.3s ease;
+    }
+
+    .hdfs-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+    }
+
+    .file-help {
+      display: block;
+      margin-top: 7px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="top">
+  <div>
+    <div class="eyebrow">HASH HUNTERS · PS-013</div>
+
+    <h1>TraceKit</h1>
+
+    <p>
+      Every log tells a story. Preserve the evidence, understand the timeline.
+    </p>
+
+    <a href="{{ url_for('hdfs_dashboard') }}" class="hdfs-btn">
+      HDFS Intelligence →
+    </a>
+
+  </div>
+
+  <span class="pill">Local demo</span>
+</header>
+
+<main>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="notice {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <section class="panel">
+    <h2>1. Upload & seal evidence</h2>
+
+    <p class="muted">
+      Choose logs, screenshots, notes or PDFs.
+      Each file receives its own SHA-256 fingerprint.
+    </p>
+
+    <form
+      action="{{ url_for('upload') }}"
+      method="post"
+      enctype="multipart/form-data"
+    >
+
+      <label>
+        Investigator name
+        <input
+          name="uploader"
+          maxlength="100"
+          placeholder="e.g. Demo Investigator"
+        >
+      </label>
+
+      <label>
+        Evidence files
+        <input
+          type="file"
+          name="evidence_files"
+          multiple
+          required
+          accept=".txt,.log,.csv,.png,.jpg,.jpeg,.pdf"
+        >
+
+        <small class="muted file-help">
+          You can select multiple files at once.
+          Supported formats: TXT, LOG, CSV, PNG, JPG, JPEG and PDF.
+        </small>
+      </label>
+
+      <button type="submit">Upload and seal evidence</button>
+
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>2. Evidence vault</h2>
+
+    {% if records %}
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID / File</th>
+            <th>Uploaded by</th>
+            <th>UTC time</th>
+            <th>SHA-256</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td>
+              <strong>#{{ r.id }} · {{ r.original_name }}</strong>
+            </td>
+
+            <td>{{ r.uploaded_by }}</td>
+            <td>{{ r.uploaded_at }}</td>
+            <td><code>{{ r.sha256 }}</code></td>
+
+            <td class="actions">
+              <a href="{{ url_for('case_detail', evidence_id=r.id) }}">Timeline</a>
+              <a href="{{ url_for('verify', evidence_id=r.id) }}">Verify</a>
+              <a href="{{ url_for('report', evidence_id=r.id) }}">PDF</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+
+    <p class="empty">
+      No evidence yet. Upload a sample .txt log to start.
+    </p>
+
+    {% endif %}
+  </section>
+
+  <p class="footnote">
+    Prototype notice: use synthetic/demo evidence only.
+    A hash helps detect changes only if the original hash record is protected independently.
+  </p>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TraceKit - HDFS Intelligence</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 30px;
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: white;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #9ca3af;
+            margin-bottom: 30px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 12px;
+        }
+
+        .card h2 {
+            font-size: 30px;
+            margin: 10px 0;
+        }
+
+        .card p {
+            color: #9ca3af;
+        }
+
+        .summary-card {
+            background: #1e293b;
+            border-left: 4px solid #38bdf8;
+            padding: 22px;
+            margin-top: 25px;
+            border-radius: 10px;
+        }
+
+        .summary-card h2 {
+            color: #38bdf8;
+            margin-top: 0;
+        }
+
+        .summary-card p {
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        .summary-card strong {
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            background: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            color: #93c5fd;
+        }
+
+        .medium {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .status {
+            color: #fbbf24;
+        }
+
+        .message {
+            max-width: 500px;
+            overflow-wrap: anywhere;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            color: #93c5fd;
+            font-weight: bold;
+        }
+
+        #anomalySearch,
+        #severityFilter {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #1e293b;
+            color: white;
+            font-size: 15px;
+        }
+
+        #anomalySearch {
+            margin-bottom: 10px;
+        }
+
+        #anomalySearch::placeholder {
+            color: #9ca3af;
+        }
+
+        #severityFilter {
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        #resultCount {
+            color: #93c5fd;
+            font-weight: bold;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>TraceKit | HDFS Intelligence</h1>
+    <p class="subtitle">HDFS Log Analysis & Anomaly Monitoring</p>
+
+    <!-- Summary Cards -->
+    <div class="cards">
+
+        <div class="card">
+            <p>Total Anomalies</p>
+            <h2>{{ total_anomalies }}</h2>
+        </div>
+
+        <div class="card">
+            <p>Medium Severity</p>
+            <h2>{{ severity_counts["MEDIUM"] }}</h2>
+        </div>
+
+        <div class="card">
+            <p>Low Severity</p>
+            <h2>{{ severity_counts["LOW"] }}</h2>
+        </div>
+
+        <div class="card">
+            <p>High Severity</p>
+            <h2>{{ severity_counts["HIGH"] }}</h2>
+        </div>
+
+    </div>
+
+    <!-- Automated Incident Summary -->
+    <div class="summary-card">
+
+        <h2>Automated Incident Summary</h2>
+
+        <p>
+            <strong>Total Events:</strong>
+            {{ incident_summary.total }}
+        </p>
+
+        <p>
+            <strong>Summary:</strong>
+            {{ incident_summary.message }}
+        </p>
+
+        <p>
+            <strong>Recommendation:</strong>
+            {{ incident_summary.recommendation }}
+        </p>
+
+        <p>
+            <strong>Affected Block IDs:</strong>
+            {{ incident_summary.block_ids|length }}
+        </p>
+
+    </div>
+
+    <!-- Anomaly Search and Filter -->
+    <h2>Detected Anomalies</h2>
+
+    <label for="anomalySearch">Search Anomalies</label>
+
+    <input
+        type="text"
+        id="anomalySearch"
+        placeholder="Search by date, severity, block ID or event..."
+    >
+
+    <label for="severityFilter">Filter by Severity</label>
+
+    <select id="severityFilter">
+        <option value="ALL">All Severities</option>
+        <option value="HIGH">High Severity</option>
+        <option value="MEDIUM">Medium Severity</option>
+        <option value="LOW">Low Severity</option>
+    </select>
+
+    <!-- Live Result Counter -->
+    <p id="resultCount"></p>
+
+    <!-- Anomaly Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Event Details</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in anomalies %}
+
+            <tr class="anomaly-row">
+
+                <td>{{ item.date }}</td>
+
+                <td>{{ item.time }}</td>
+
+                <td class="medium">{{ item.severity }}</td>
+
+                <td class="status">{{ item.status }}</td>
+
+                <td class="message">{{ item.message }}</td>
+
+            </tr>
+
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Search and Filter JavaScript -->
+    <script>
+
+        const searchBox = document.getElementById("anomalySearch");
+
+        const severityFilter = document.getElementById("severityFilter");
+
+        const rows = document.querySelectorAll(".anomaly-row");
+
+        const resultCount = document.getElementById("resultCount");
+
+
+        function updateSearch() {
+
+            const searchValue = searchBox.value.trim().toLowerCase();
+
+            const selectedSeverity = severityFilter.value;
+
+            let visibleCount = 0;
+
+
+            rows.forEach(function(row) {
+
+                const rowText = row.textContent.toLowerCase();
+
+                const rowSeverity = row.querySelector("td:nth-child(3)")
+                                       .textContent.trim().toUpperCase();
+
+
+                const matchesSearch = rowText.includes(searchValue);
+
+                const matchesSeverity =
+                    selectedSeverity === "ALL" ||
+                    rowSeverity === selectedSeverity;
+
+
+                if (matchesSearch && matchesSeverity) {
+
+                    row.style.display = "";
+
+                    visibleCount++;
+
+                } else {
+
+                    row.style.display = "none";
+
+                }
+
+            });
+
+
+            resultCount.innerText =
+                "Showing " + visibleCount +
+                " of " + rows.length + " anomalies";
+
+        }
+
+
+        searchBox.addEventListener("input", updateSearch);
+
+        severityFilter.addEventListener("change", updateSearch);
+
+
+        // Initial result count
+        updateSearch();
+
+    </script>
+
+</body>
+</html>
