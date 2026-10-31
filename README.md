@@ -43,6 +43,61 @@ If `py` is not recognized, try `python` instead.
 4. Make a copy of the sample log, change one character, and upload that changed copy in Verify: it should show MISMATCH.
 5. Click **PDF** to download a sample report.
 
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Language | Python 3.10+ |
+| Backend | Flask |
+| Frontend | HTML, CSS, Jinja2 templates |
+| Database | SQLite |
+| Hashing | `hashlib` (SHA-256) |
+| Log parsing | `re`, `datetime` |
+| Report export | ReportLab (PDF) |
+| Deployment | Render |
+
+## Key Features
+
+- Evidence upload with SHA-256 fingerprinting
+- Log timeline with sorted events
+- Rule-based red flag detection
+- File verification (MATCH / MISMATCH)
+- PDF report export
+ ## System Architecture
+
+```mermaid
+flowchart TD
+    U[User / Investigator] -->|Upload log file| W[Flask Web App - app.py]
+    W --> H[SHA-256 Hashing - hashlib]
+    W --> P[Log Parser - re + datetime / hdfs_parser.py]
+    H --> DB[(SQLite - tracekit.db)]
+    W --> E[Evidence Storage - instance/evidence]
+    P --> R[Rule-based Red Flag Detection]
+    R --> T[Timeline and Incident Summary]
+    T --> UI[HTML Templates - Jinja2 + CSS]
+    DB --> V[Verify Module - MATCH / MISMATCH]
+    V --> UI
+    T --> PDF[PDF Report - ReportLab]
+    PDF --> U
+    UI --> U
+```
+## Screenshots
+
+### Upload Evidence
+![Upload](screenshots/01-upload.png)
+
+### Timeline and Red Flags
+![Timeline](screenshots/02-timeline.png)
+
+### Verify: Match
+![Verify Match](screenshots/03-verify-match.png)
+
+### Verify: Mismatch
+![Verify Mismatch](screenshots/04-verify-mismatch.png)
+
+### PDF Report
+![PDF Report](screenshots/05-pdf-report.png)
+
 ## 4. How it works
 - Flask: web server and routes.
 - `hashlib.sha256`: computes the file fingerprint.
