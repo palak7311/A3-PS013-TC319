@@ -140,7 +140,7 @@
             <td class="actions">
               <a href="{{ url_for('case_detail', evidence_id=r.id) }}">Timeline</a>
               <a href="{{ url_for('verify', evidence_id=r.id) }}">Verify</a>
-              <a href="{{ url_for('report', evidence_id=r.id) }}">PDF</a>
+              <a href="{{ url_for('generate_report', evidence_id=r.id) }}">PDF</a>
             </td>
           </tr>
           {% endfor %}

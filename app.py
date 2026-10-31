@@ -1,4 +1,3 @@
-
 import os
 import re
 import hashlib
@@ -35,17 +34,18 @@ ALLOWED_EXTENSIONS = {
     "txt", "log", "csv", "png", "jpg", "jpeg", "pdf"
 }
 
-MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB demo limit
+MAX_CONTENT_LENGTH = 10 * 1024 * 1024
 
 DATA_DIR.mkdir(exist_ok=True)
 EVIDENCE_DIR.mkdir(exist_ok=True)
 
-
 app = Flask(__name__)
+
 app.secret_key = os.environ.get(
     "TRACEKIT_SECRET_KEY",
     "dev-only-change-this"
 )
+
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 
 
@@ -111,7 +111,6 @@ def parse_events(path):
     )
 
     def classify_event(message):
-
         upper = message.upper()
 
         if any(word in upper for word in [
@@ -175,7 +174,6 @@ def parse_events(path):
         ) as f:
 
             for line_no, raw in enumerate(f, start=1):
-
                 line = raw.strip()
 
                 if not line:
@@ -184,7 +182,6 @@ def parse_events(path):
                 match = pattern.match(line)
 
                 if match:
-
                     timestamp, message = match.groups()
 
                     normalized = (
@@ -279,8 +276,7 @@ def parse_pdf_events(path):
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
 
-
-# ---------------- RED FLAG DETECTION ----------------
+    # ---------------- RED FLAG DETECTION ----------------
 
 def detect_flags(events):
 
@@ -380,6 +376,7 @@ def upload():
         or "Demo Investigator"
     ).strip()[:100]
 
+    # Remove empty file selections
     files = [
         file for file in files
         if file and file.filename
@@ -394,6 +391,7 @@ def upload():
 
     for file in files:
 
+        # Validate file type
         if not allowed_file(file.filename):
             failed_files.append(file.filename)
             continue
@@ -402,6 +400,7 @@ def upload():
             file.filename
         ) or "uploaded_file"
 
+        # Generate a unique filename
         stamp = datetime.now(timezone.utc).strftime(
             "%Y%m%dT%H%M%S%fZ"
         )
@@ -410,14 +409,17 @@ def upload():
         target = EVIDENCE_DIR / stored_name
 
         try:
+            # Save evidence
             file.save(target)
 
+            # Generate SHA-256 fingerprint
             digest = sha256_file(target)
 
             uploaded_at = datetime.now(
                 timezone.utc
             ).isoformat(timespec="seconds")
 
+            # Store evidence metadata
             with connect_db() as con:
 
                 con.execute(
@@ -437,12 +439,16 @@ def upload():
 
             uploaded_count += 1
 
-        except Exception:
+        except Exception as e:
+            print(f"Upload error: {e}")
+
+            # Remove incomplete file
             if target.exists():
                 target.unlink()
 
             failed_files.append(original_name)
 
+    # Show upload result
     if uploaded_count > 0:
         flash(
             f"{uploaded_count} evidence file(s) uploaded and sealed successfully.",
@@ -478,7 +484,7 @@ def case_detail(evidence_id):
         else ""
     )
 
-    # Support TXT, LOG, CSV and selectable-text PDF
+    # Parse supported evidence formats
     if ext in {"txt", "log", "csv"}:
         events = parse_events(path)
 
@@ -536,46 +542,46 @@ def verify(evidence_id):
                 f"verify_{datetime.now().timestamp()}.tmp"
             )
 
-            candidate.save(temp_path)
+            try:
+                candidate.save(temp_path)
 
-            candidate_hash = sha256_file(temp_path)
+                candidate_hash = sha256_file(temp_path)
 
-            temp_path.unlink(missing_ok=True)
+                verdict = (
+                    "MATCH — same SHA-256 fingerprint"
+                    if candidate_hash == record["sha256"]
+                    else
+                    "MISMATCH — file differs from the recorded fingerprint"
+                )
 
-            verdict = (
-                "MATCH — same SHA-256 fingerprint"
-                if candidate_hash == record["sha256"]
-                else
-                "MISMATCH — file differs from the recorded fingerprint"
-            )
+            finally:
+                temp_path.unlink(missing_ok=True)
 
     return render_template(
         "verify.html",
         record=record,
         verdict=verdict
-    )
+    ) 
 
-
-# ---------------- PDF INCIDENT REPORT ----------------
+    # ---------------- INCIDENT PDF REPORT ----------------
 
 @app.route("/report/<int:evidence_id>")
-def report(evidence_id):
+def generate_report(evidence_id):
 
-    record = get_evidence(evidence_id)
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.utils import simpleSplit
 
-    if not record:
-        flash("Evidence record not found.", "error")
+    evidence = get_evidence(evidence_id)
+
+    if not evidence:
+        flash("Evidence not found.")
         return redirect(url_for("index"))
 
-    path = EVIDENCE_DIR / record["stored_name"]
+    path = EVIDENCE_DIR / evidence["stored_name"]
 
-    ext = (
-        record["original_name"].rsplit(".", 1)[-1].lower()
-        if "." in record["original_name"]
-        else ""
-    )
+    ext = evidence["original_name"].rsplit(".", 1)[-1].lower()
 
-    # Support PDF evidence in downloadable reports too
     if ext in {"txt", "log", "csv"}:
         events = parse_events(path)
 
@@ -589,120 +595,63 @@ def report(evidence_id):
 
     out_path = DATA_DIR / f"TraceKit_Report_{evidence_id}.pdf"
 
-    pdf = canvas.Canvas(
-        str(out_path),
-        pagesize=A4
-    )
+    pdf = canvas.Canvas(str(out_path), pagesize=A4)
 
     width, height = A4
-    y = height - 55
+    y = height - 50
+
+    def write_line(text, font="Helvetica", size=10):
+        nonlocal y
+
+        pdf.setFont(font, size)
+
+        lines = simpleSplit(str(text), font, size, width - 100)
+
+        for line in lines:
+            if y < 50:
+                pdf.showPage()
+                y = height - 50
+                pdf.setFont(font, size)
+
+            pdf.drawString(50, y, line)
+            y -= 16
 
     pdf.setTitle("TraceKit Incident Report")
 
-    pdf.setFont("Helvetica-Bold", 18)
+    write_line("TRACEKIT - INCIDENT REPORT", "Helvetica-Bold", 18)
+    y -= 15
 
-    pdf.drawString(
-        48,
-        y,
-        "TraceKit - Incident Evidence Report"
-    )
+    write_line(f"Evidence ID: {evidence['id']}")
+    write_line(f"Original File: {evidence['original_name']}")
+    write_line(f"Uploaded By: {evidence['uploaded_by']}")
+    write_line(f"Uploaded At: {evidence['uploaded_at']}")
+    write_line(f"SHA-256: {evidence['sha256']}")
 
-    y -= 32
+    y -= 20
 
-    pdf.setFont("Helvetica", 10)
+    write_line("DETECTED RED FLAGS", "Helvetica-Bold", 14)
+    y -= 5
 
-    lines = [
-        f"Evidence ID: {record['id']}",
-        f"Original filename: {record['original_name']}",
-        f"Uploaded by: {record['uploaded_by']}",
-        f"Uploaded at (UTC): {record['uploaded_at']}",
-        f"SHA-256: {record['sha256']}",
-        "",
-        f"Parsed timeline events: {len(events)}",
-        "Red flags (rule-based; review manually):"
-    ] + (
-        flags or [
-            "No configured rules matched. "
-            "This is not proof that no incident occurred."
-        ]
-    )
+    if flags:
+        for flag in flags:
+            write_line(f"- {flag}")
+    else:
+        write_line("No red flags detected.")
 
-    for line in lines:
+    y -= 20
 
-        wrapped_lines = simpleSplit(
-            line,
-            "Helvetica",
-            10,
-            width - 96
-        )
+    write_line("INCIDENT TIMELINE", "Helvetica-Bold", 14)
+    y -= 5
 
-        for wrapped_line in wrapped_lines:
-
-            if y < 55:
-                pdf.showPage()
-                y = height - 55
-                pdf.setFont("Helvetica", 10)
-
-            pdf.drawString(
-                48,
-                y,
-                wrapped_line
-            )
-
-            y -= 16
-
-    # Timeline heading
     if events:
-
-        y -= 8
-
-        if y < 55:
-            pdf.showPage()
-            y = height - 55
-
-        pdf.setFont("Helvetica-Bold", 12)
-
-        pdf.drawString(
-            48,
-            y,
-            "Timeline"
-        )
-
-        y -= 22
-        pdf.setFont("Helvetica", 9)
-
         for event in events:
-
-            line = (
-                f"{event['display_time']} | "
-                f"{event['category']} | "
-                f"Priority: {event.get('priority', 'Low')} | "
-                f"{event['message']}"
+            write_line(
+                f"{event.get('timestamp', 'Unknown time')} | "
+                f"{event.get('category', 'Event')} | "
+                f"{event.get('message', '')}"
             )
-
-            wrapped_lines = simpleSplit(
-                line,
-                "Helvetica",
-                9,
-                width - 96
-            )
-
-            for wrapped_line in wrapped_lines:
-
-                if y < 55:
-                    pdf.showPage()
-                    y = height - 55
-                    pdf.setFont("Helvetica", 9)
-
-                pdf.drawString(
-                    48,
-                    y,
-                    wrapped_line
-                )
-
-                y -= 14
-
-            y -= 5
+    else:
+        write_line("No timeline events available.")
 
     pdf.save()
 
@@ -713,25 +662,18 @@ def report(evidence_id):
     )
 
 
-# ---------------- HDFS DASHBOARD ----------------
+# ---------------- HDFS ANOMALY DASHBOARD ----------------
 
 @app.route("/hdfs")
 def hdfs_dashboard():
 
     report_path = ROOT / "hdfs_anomaly_report.json"
 
-    if not report_path.exists():
-        return {
-            "error": "HDFS anomaly report not found"
-        }, 404
+    anomalies = []
 
-    with open(
-        report_path,
-        "r",
-        encoding="utf-8"
-    ) as file:
-
-        anomalies = json.load(file)
+    if report_path.exists():
+        with open(report_path, "r", encoding="utf-8") as file:
+            anomalies = json.load(file)
 
     severity_counts = {
         "LOW": 0,
@@ -739,9 +681,8 @@ def hdfs_dashboard():
         "HIGH": 0
     }
 
-    for item in anomalies:
-
-        severity = item.get("severity", "LOW")
+    for anomaly in anomalies:
+        severity = str(anomaly.get("severity", "LOW")).upper()
 
         if severity in severity_counts:
             severity_counts[severity] += 1
@@ -760,20 +701,19 @@ def hdfs_dashboard():
 # ---------------- FILE SIZE ERROR ----------------
 
 @app.errorhandler(413)
-def too_large(_error):
+def file_too_large(error):
 
-    flash(
-        "File is too large. Demo limit is 10 MB.",
-        "error"
-    )
+    flash("File is too large. Maximum allowed size is 10 MB.")
 
     return redirect(url_for("index"))
 
 
 # ---------------- RUN APPLICATION ----------------
 
+# Initialize database when the app starts.
+# This also works when the app runs through Gunicorn on Render.
+
+init_db()
+
 if __name__ == "__main__":
-
-    init_db()
-
-    app.run(debug=True)
+    app.run(debug=True)      
